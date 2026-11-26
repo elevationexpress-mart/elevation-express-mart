@@ -11,9 +11,12 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+  <!-- html2pdf: client-side PDF download (no server needed) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
   <style>
     :root {
-      --primary: #15803d; /* Forest / Nature green matching Elevation logo */
+      --primary: #15803d; /* Forest green matching Elevation logo */
       --primary-hover: #166534;
       --primary-light: #f0fdf4;
       --success: #16a34a;
@@ -32,6 +35,7 @@
       --gray-700: #334155;
       --gray-800: #1e293b;
       --gray-900: #0f172a;
+      --dark-header: #2b2f33;
       --radius: 10px;
       --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
       --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -254,6 +258,20 @@
     .btn-outline:hover {
       background-color: var(--gray-100);
       border-color: var(--gray-400);
+    }
+
+    .btn-success-sm {
+      background-color: #dcfce7;
+      border-color: #86efac;
+      color: #15803d;
+      font-size: 0.775rem;
+      font-weight: 700;
+      padding: 0.35rem 0.65rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-success-sm:hover {
+      background-color: #bbf7d0;
     }
 
     .btn-danger-outline {
@@ -594,7 +612,7 @@
     .modal-content {
       background: #ffffff;
       border-radius: 14px;
-      max-width: 800px;
+      max-width: 860px;
       width: 100%;
       box-shadow: var(--shadow-lg);
       overflow: hidden;
@@ -704,31 +722,80 @@
       box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
     }
 
-    textarea.form-control {
-      resize: vertical;
-      min-height: 70px;
-    }
-
-    .financial-section {
-      background-color: var(--gray-50);
+    /* Items Table in Form */
+    .items-builder {
+      background: var(--gray-50);
       border: 1px solid var(--gray-200);
       border-radius: 10px;
       padding: 1.25rem;
-      margin-top: 0.5rem;
       grid-column: span 2;
+      margin-top: 0.5rem;
     }
 
-    @media (max-width: 768px) {
-      .financial-section {
-        grid-column: span 1;
-      }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5rem;
+    }
+
+    .items-table th {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: var(--gray-600);
+      padding: 0.5rem;
+      text-align: left;
+    }
+
+    .items-table td {
+      padding: 0.4rem;
+    }
+
+    .items-summary-box {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed var(--gray-300);
+      align-items: center;
+    }
+
+    /* Accounting Breakdown Section (Unlocked only when Delivered) */
+    .financial-section {
+      background-color: #f0fdf4;
+      border: 2px solid #86efac;
+      border-radius: 10px;
+      padding: 1.25rem;
+      margin-top: 0.75rem;
+      grid-column: span 2;
+      animation: fadeInSection 0.3s ease-out;
+    }
+
+    @keyframes fadeInSection {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .delivered-notice-locked {
+      background: #eff6ff;
+      border: 1px dashed #93c5fd;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      grid-column: span 2;
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+      color: #1e40af;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
     }
 
     .financial-title {
       font-size: 0.95rem;
       font-weight: 700;
-      color: var(--gray-800);
-      margin-bottom: 1rem;
+      color: #166534;
+      margin-bottom: 0.75rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
@@ -736,13 +803,13 @@
 
     .fin-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 0.85rem;
     }
 
     @media (max-width: 768px) {
       .fin-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
       }
     }
 
@@ -751,22 +818,12 @@
       padding: 1rem;
       border-radius: 8px;
       background: #ffffff;
-      border: 2px solid var(--gray-200);
+      border: 2px solid #86efac;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
       gap: 1rem;
-    }
-
-    .profit-preview-card.profit-positive-box {
-      border-color: #86efac;
-      background-color: #f0fdf4;
-    }
-
-    .profit-preview-card.profit-negative-box {
-      border-color: #fca5a5;
-      background-color: #fef2f2;
     }
 
     .profit-preview-details {
@@ -777,98 +834,236 @@
     .profit-preview-val {
       font-size: 1.5rem;
       font-weight: 800;
+      color: var(--success);
     }
 
-    /* Invoice Preview Modal Styles */
+    /* ── Invoice Printable: Compact, Clean, Single-Page ── */
+    /* Logo accent green: #2d6a2d / #3a7c3a — from Elevation Express Mart logo */
+    :root {
+      --inv-green: #2d6a2d;
+      --inv-green-light: #e8f5e9;
+      --inv-green-mid: #4a8c4a;
+    }
+
     .invoice-printable {
-      padding: 2rem;
-      background: white;
+      padding: 1.1rem 1.6rem 1rem 1.6rem;
+      background: #ffffff;
       color: #1e293b;
+      font-size: 0.72rem;
+      font-family: "Segoe UI", Arial, sans-serif;
+      max-width: 760px;
+      margin: 0 auto;
+      /* force single-page rendering */
+      box-sizing: border-box;
     }
 
-    .inv-header {
+    /* ── SECTION 1: Header (Logo + INVOICE title) ── */
+    .inv-top-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid var(--gray-200);
-      padding-bottom: 1.5rem;
-      margin-bottom: 1.5rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--inv-green);
     }
 
-    .inv-parties {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 2rem;
-      margin-bottom: 1.5rem;
+    .inv-logo-box {
+      width: 68px;
+      height: 68px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid #d1d5db;
+      margin-bottom: 0.3rem;
     }
 
-    .inv-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 1.5rem;
+    .inv-brand-name {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--inv-green);
+      margin-bottom: 0;
     }
 
-    .inv-table th, .inv-table td {
-      border: 1px solid var(--gray-200);
-      padding: 0.75rem;
-      text-align: left;
+    .inv-meta-right {
+      text-align: right;
     }
 
-    .inv-table th {
-      background-color: var(--gray-50);
+    .inv-main-title {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #1e293b;
+      line-height: 1;
+      border-left: 3px solid var(--inv-green);
+      padding-left: 8px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .inv-number {
+      font-size: 0.84rem;
       font-weight: 600;
+      color: #64748b;
+      margin-top: 0.2rem;
+      margin-bottom: 0.5rem;
     }
 
-    .inv-totals {
-      width: 320px;
-      margin-left: auto;
-      border: 1px solid var(--gray-200);
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .inv-total-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0.85rem;
-      font-size: 0.875rem;
-      border-bottom: 1px solid var(--gray-200);
-    }
-
-    .inv-total-row.grand {
-      font-weight: 700;
-      font-size: 1.05rem;
-      background-color: var(--gray-50);
-      border-bottom: none;
-    }
-
-    /* Toast Notification */
-    .toast-container {
-      position: fixed;
-      bottom: 2rem;
-      right: 2rem;
-      z-index: 1000;
+    .inv-dates-grid {
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
+      gap: 0.18rem;
+      font-size: 0.72rem;
+      margin-bottom: 0.4rem;
     }
 
-    .toast {
-      background: var(--gray-900);
-      color: #ffffff;
-      padding: 0.75rem 1.25rem;
-      border-radius: 8px;
-      box-shadow: var(--shadow-lg);
-      font-size: 0.875rem;
+    .inv-date-item {
       display: flex;
-      align-items: center;
-      gap: 0.6rem;
-      animation: toastIn 0.25s ease-out;
+      justify-content: flex-end;
+      gap: 1.2rem;
+    }
+    .inv-date-item span:first-child { color: #64748b; }
+    .inv-date-item span:last-child  { font-weight: 700; }
+
+    /* ── SECTION 2: Addresses + Balance Due ── */
+    .inv-middle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 1rem;
+      align-items: start;
+      margin-top: 0.9rem;
+      margin-bottom: 1.6rem;      /* gap before items table */
+      padding-bottom: 0;
     }
 
-    @keyframes toastIn {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
+    .balance-due-box {
+      border: 2px solid var(--inv-green);
+      border-radius: 6px;
+      overflow: hidden;
+      min-width: 115px;
+      align-self: flex-start;
+    }
+    .balance-due-box .bd-label {
+      background: var(--inv-green);
+      color: #ffffff;
+      font-size: 0.62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 0.22rem 0.5rem;
+    }
+    .balance-due-box .bd-amount {
+      padding: 0.3rem 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--inv-green);
+      white-space: nowrap;
+      background: var(--inv-green-light);
+    }
+
+    .addr-heading {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--inv-green);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.3rem;
+      border-bottom: 1.5px solid var(--inv-green);
+      padding-bottom: 0.18rem;
+    }
+
+    .addr-name {
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: #0f172a;
+      margin-top: 0.22rem;
+    }
+
+    .addr-line {
+      font-size: 0.69rem;
+      color: #475569;
+      line-height: 1.5;
+      margin-top: 1px;
+    }
+
+    /* ── SECTION 3: Items Table ── */
+    .inv-table-custom {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;          /* totals follow directly */
+    }
+
+    .inv-table-custom thead th {
+      background-color: var(--inv-green-light);
+      color: var(--inv-green);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.42rem 0.6rem;
+      border-top: 1.5px solid var(--inv-green);
+      border-bottom: 1.5px solid var(--inv-green);
+    }
+
+    .inv-table-custom tbody tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+
+    .inv-table-custom tbody td {
+      padding: 0.38rem 0.6rem;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.72rem;
+      color: #1e293b;
+      vertical-align: middle;
+    }
+
+    .inv-table-custom tbody tr:last-child td {
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    /* ── SECTION 4: Totals ── */
+    .inv-totals-box {
+      width: 220px;
+      margin-left: auto;
+      margin-top: 0.4rem;
+      margin-bottom: 1.8rem;      /* larger gap before terms */
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.72rem;
+    }
+
+    .inv-totals-row {
+      display: flex;
+      justify-content: space-between;
+      color: #475569;
+      padding: 0.08rem 0;
+    }
+
+    .inv-totals-row.grand {
+      font-weight: 800;
+      font-size: 0.84rem;
+      color: var(--inv-green);
+      border-top: 2px solid var(--inv-green);
+      margin-top: 0.2rem;
+      padding-top: 0.3rem;
+    }
+
+    /* ── SECTION 5: Terms (above admin box, not at footer edge) ── */
+    .inv-terms-box {
+      font-size: 0.65rem;
+      color: #64748b;
+      line-height: 1.7;
+      border-top: 1px dashed #cbd5e1;
+      padding-top: 0.75rem;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .inv-terms-box strong {
+      display: block;
+      margin-bottom: 0.18rem;
+      color: #1e293b;
+      font-size: 0.7rem;
+      font-weight: 700;
     }
 
     /* Loading Screen */
@@ -901,23 +1096,17 @@
     }
 
     @media print {
-      body * {
-        visibility: hidden;
-      }
-      #invoiceModal, #invoiceModal * {
-        visibility: visible;
-      }
+      body * { visibility: hidden; }
+      #invoiceModal, #invoiceModal * { visibility: visible; }
       #invoiceModal {
         position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: auto;
+        left: 0; top: 0;
+        width: 100%; height: auto;
         background: white;
         padding: 0;
         display: block !important;
       }
-      .modal-header, .modal-footer {
+      .modal-header, .modal-footer, #adminBreakdownContainer {
         display: none !important;
       }
       .modal-content {
@@ -925,6 +1114,36 @@
         max-width: 100%;
         max-height: none;
         border: none;
+        overflow: visible !important;
+      }
+      /* ── Print-safe gaps that actually show up in PDF/print ── */
+      .invoice-printable {
+        padding: 0.5cm 1.1cm 0.5cm 1.1cm;
+        font-size: 0.64rem;
+      }
+      .inv-top-row {
+        margin-bottom: 0.4cm !important;
+        padding-bottom: 0.25cm !important;
+      }
+      .inv-middle-row {
+        margin-top: 0.3cm !important;
+        margin-bottom: 0.5cm !important;  /* gap between addresses and items */
+        padding-bottom: 0 !important;
+      }
+      .inv-table-custom {
+        margin-bottom: 0 !important;
+      }
+      .inv-totals-box {
+        margin-top: 0.2cm !important;
+        margin-bottom: 0.5cm !important;  /* gap between totals and terms */
+      }
+      .inv-terms-box {
+        margin-top: 0.3cm !important;
+        padding-top: 0.25cm !important;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 0.8cm 0.6cm;
       }
     }
   </style>
@@ -938,7 +1157,7 @@
     <div>Opening Elevation Express Mart...</div>
   </div>
 
-  <!-- Authentication Gate Screen (Firebase Sign In & Create Account Only) -->
+  <!-- Authentication Gate Screen -->
   <div id="authContainer" class="auth-overlay" style="display:none;">
     <div class="auth-card">
       <div class="auth-header">
@@ -995,7 +1214,7 @@
         <div class="header-actions">
           <div class="user-pill" id="userEmailBadge" title="Signed-in Account">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span id="userEmailText">admin@elevationexpress.com</span>
+            <span id="userEmailText">Admin</span>
           </div>
           <button class="btn btn-outline" onclick="exportToCSV()" title="Download CSV for Excel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -1023,25 +1242,25 @@
       <section class="stats-grid">
         <div class="stat-card revenue">
           <span class="stat-label">Total Revenue (Bill Amount)</span>
-          <span class="stat-value" id="statRevenue">0.00</span>
+          <span class="stat-value" id="statRevenue">BDT 0.00</span>
           <div class="stat-sub">Gross billed to customers</div>
         </div>
 
         <div class="stat-card prod-cost">
-          <span class="stat-label">Product Cost</span>
-          <span class="stat-value" id="statProdCost">0.00</span>
-          <div class="stat-sub">Base inventory / goods expense</div>
+          <span class="stat-label">Product Cost (Delivered)</span>
+          <span class="stat-value" id="statProdCost">BDT 0.00</span>
+          <div class="stat-sub">Inventory expense on delivered orders</div>
         </div>
 
         <div class="stat-card delivery-cost">
-          <span class="stat-label">Delivery + COD Cost</span>
-          <span class="stat-value" id="statDeliveryCost">0.00</span>
+          <span class="stat-label">Delivery + COD Expense</span>
+          <span class="stat-value" id="statDeliveryCost">BDT 0.00</span>
           <div class="stat-sub">Courier & Cash handling fees</div>
         </div>
 
         <div class="stat-card profit">
           <span class="stat-label">Total Net Profit</span>
-          <span class="stat-value" id="statProfit">0.00</span>
+          <span class="stat-value" id="statProfit">BDT 0.00</span>
           <div class="stat-sub">
             <span class="badge-pill" id="statMarginBadge" style="background:#dcfce7; color:#15803d;">Margin: 0%</span>
           </div>
@@ -1058,7 +1277,7 @@
       <div class="toolbar-card">
         <div class="search-box">
           <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          <input type="text" id="searchInput" class="search-input" placeholder="Search by Invoice #, Customer Name, Phone, or Product..." oninput="handleFilterChange()">
+          <input type="text" id="searchInput" class="search-input" placeholder="Search by Invoice #, Customer Name, Phone, or Item..." oninput="handleFilterChange()">
         </div>
 
         <div class="filters-group">
@@ -1073,7 +1292,7 @@
 
           <select id="statusFilter" class="select-control" onchange="handleFilterChange()">
             <option value="all">All Statuses</option>
-            <option value="delivered">Delivered</option>
+            <option value="delivered">Delivered (Profit Recorded)</option>
             <option value="pending">Pending</option>
             <option value="in_transit">In Transit</option>
             <option value="returned">Returned</option>
@@ -1101,13 +1320,12 @@
                 <th>Invoice #</th>
                 <th>Date</th>
                 <th>Customer Information</th>
-                <th>Product Details</th>
+                <th>Items Ordered</th>
                 <th style="text-align: right;">Total Bill</th>
-                <th style="text-align: right;">Prod Cost</th>
-                <th style="text-align: right;">Delivery</th>
-                <th style="text-align: right;">COD</th>
-                <th style="text-align: right;">Net Profit</th>
                 <th>Status</th>
+                <th style="text-align: right;">Prod Cost</th>
+                <th style="text-align: right;">Delivery Exp</th>
+                <th style="text-align: right;">Net Profit</th>
                 <th style="text-align: center;">Actions</th>
               </tr>
             </thead>
@@ -1120,24 +1338,25 @@
     </main>
   </div>
 
-  <!-- Add / Edit Modal -->
+  <!-- Add / Edit Order Modal -->
   <div class="modal-overlay" id="orderModal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 id="modalTitle">New Order & Invoice Entry</h3>
+        <h3 id="modalTitle">Create New Invoice</h3>
         <button class="close-btn" onclick="closeOrderModal()">&times;</button>
       </div>
       <div class="modal-body">
         <form id="orderForm" onsubmit="handleFormSubmit(event)">
           <input type="hidden" id="editRecordId">
 
+          <!-- 1. Customer & Invoice Info -->
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">
                 <span>Invoice No *</span>
                 <a href="javascript:void(0)" onclick="generateNewInvoiceNo()" style="font-size:0.75rem; color:var(--primary); text-decoration:none;">Generate Next</a>
               </label>
-              <input type="text" id="invoiceNo" class="form-control" required placeholder="e.g. EEM-1001">
+              <input type="text" id="invoiceNo" class="form-control" required placeholder="e.g. 25255">
             </div>
 
             <div class="form-group">
@@ -1146,80 +1365,135 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Customer Name *</label>
-              <input type="text" id="customerName" class="form-control" required placeholder="Full Name">
+              <label class="form-label">Customer Name (Bill To / Ship To) *</label>
+              <input type="text" id="customerName" class="form-control" required placeholder="e.g. Nusrat">
             </div>
 
             <div class="form-group">
               <label class="form-label">Customer Phone No *</label>
-              <input type="text" id="customerPhone" class="form-control" required placeholder="e.g. 017XXXXXXXX">
+              <input type="text" id="customerPhone" class="form-control" required placeholder="e.g. 01577068886">
             </div>
 
             <div class="form-group col-span-2">
-              <label class="form-label">Customer Address</label>
-              <input type="text" id="customerAddress" class="form-control" placeholder="Delivery street address, district, city">
-            </div>
-
-            <div class="form-group col-span-2">
-              <label class="form-label">Product Details</label>
-              <textarea id="productDetails" class="form-control" rows="2" placeholder="Item name, quantity, size, variant, SKU..."></textarea>
+              <label class="form-label">Customer Address (Delivery / Shipping Location) *</label>
+              <input type="text" id="customerAddress" class="form-control" required placeholder="e.g. Company Ghat, Kamrangirchar, Rohmot Ali Addorsho Biddaloy">
             </div>
 
             <div class="form-group">
-              <label class="form-label">Order Status</label>
-              <select id="orderStatus" class="form-control">
-                <option value="delivered">Delivered</option>
-                <option value="pending">Pending</option>
-                <option value="in_transit">In Transit</option>
-                <option value="returned">Returned</option>
-                <option value="cancelled">Cancelled</option>
+              <label class="form-label">Payment Terms</label>
+              <select id="paymentTerms" class="form-control">
+                <option value="COD" selected>COD (Cash on Delivery)</option>
+                <option value="bKash">bKash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Prepaid">Prepaid</option>
               </select>
             </div>
 
             <div class="form-group">
               <label class="form-label">Courier Service</label>
-              <input type="text" id="courierName" class="form-control" placeholder="e.g. Steadfast, Pathao, RedX, Sundarban">
+              <input type="text" id="courierName" class="form-control" placeholder="e.g. Steadfast, Pathao, RedX">
             </div>
 
-            <!-- Financial Calculation Section -->
-            <div class="financial-section">
+            <!-- 2. Dynamic Items Builder (Matching Sample Invoice) -->
+            <div class="items-builder">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                <label style="font-size:0.9rem; font-weight:700; color:var(--gray-800);">Invoice Items / Products</label>
+                <button type="button" class="btn btn-outline btn-sm" onclick="addItemRow()">+ Add Item</button>
+              </div>
+
+              <div style="overflow-x:auto;">
+                <table class="items-table" id="itemsTable">
+                  <thead>
+                    <tr>
+                      <th style="width:50%;">Item Description</th>
+                      <th style="width:15%; text-align:center;">Quantity</th>
+                      <th style="width:20%; text-align:right;">Price (BDT)</th>
+                      <th style="width:20%; text-align:right;">Amount (BDT)</th>
+                      <th style="width:5%;"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemsTableBody">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Summary Totals -->
+              <div class="items-summary-box">
+                <div>
+                  <span style="font-size:0.8rem; color:var(--gray-500); display:block;">Subtotal</span>
+                  <span style="font-weight:700; font-size:1rem;" id="subtotalDisplay">BDT 0.00</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:0.5rem;">
+                  <span style="font-size:0.85rem; font-weight:600; color:var(--gray-700);">+ Delivery Charge:</span>
+                  <input type="number" step="0.01" min="0" id="deliveryChargeInput" class="form-control" style="width:105px; padding:0.35rem 0.5rem; text-align:right;" value="70.00" oninput="recalcInvoiceTotals()">
+                </div>
+                <div style="background:#ffffff; border:1px solid #cbd5e1; padding:0.4rem 0.85rem; border-radius:6px;">
+                  <span style="font-size:0.75rem; color:var(--gray-500); display:block; text-transform:uppercase;">Balance Due (Total Bill)</span>
+                  <span style="font-weight:800; font-size:1.15rem; color:var(--primary);" id="totalBillDisplay">BDT 70.00</span>
+                </div>
+              </div>
+
+              <input type="hidden" id="totalBill" value="70">
+              <input type="hidden" id="subtotalValue" value="0">
+            </div>
+
+            <!-- 3. Order Status Selector -->
+            <div class="form-group col-span-2" style="background:#ffffff; border:1px solid var(--gray-300); padding:1rem; border-radius:8px;">
+              <label class="form-label" style="font-size:0.95rem; font-weight:700;">
+                <span>Order Delivery Status *</span>
+                <span style="font-size:0.8rem; font-weight:normal; color:var(--gray-500);">Select <strong>Delivered</strong> to enter cost & profit breakdown</span>
+              </label>
+              <select id="orderStatus" class="form-control" style="font-size:1rem; font-weight:700; padding:0.75rem;" onchange="handleStatusChange()">
+                <option value="pending" selected>Pending (Order Created)</option>
+                <option value="in_transit">In Transit (With Courier)</option>
+                <option value="delivered">✅ Delivered (Unlock Accounting Breakdown)</option>
+                <option value="returned">Returned</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <!-- 4. Notice when NOT delivered -->
+            <div id="deliveredNoticeLocked" class="delivered-notice-locked">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Order status is currently <strong>Pending / In Transit</strong>. When you select <strong>Delivered</strong>, the Product Cost, Courier Cost, and Net Profit breakdown will unlock.</span>
+            </div>
+
+            <!-- 5. Account Breakdown Section (Visible ONLY when Delivered) -->
+            <div id="financialSection" class="financial-section" style="display:none;">
               <div class="financial-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                Financial & Profit Breakdown
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Delivered Order - Accounting & Profit Breakdown
               </div>
               <div class="fin-grid">
                 <div class="form-group">
-                  <label class="form-label">Total Bill Amount *</label>
-                  <input type="number" step="0.01" min="0" id="totalBill" class="form-control" required placeholder="0.00" oninput="calculateProfit()">
+                  <label class="form-label">Product Cost (Inventory Expense) *</label>
+                  <input type="number" step="0.01" min="0" id="productCost" class="form-control" placeholder="0.00" oninput="calculateProfit()">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">Product Cost *</label>
-                  <input type="number" step="0.01" min="0" id="productCost" class="form-control" required placeholder="0.00" oninput="calculateProfit()">
-                </div>
-
-                <div class="form-group">
-                  <label class="form-label">Delivery Cost</label>
+                  <label class="form-label">Courier Cost Paid (Delivery Expense) *</label>
                   <input type="number" step="0.01" min="0" id="deliveryCost" class="form-control" placeholder="0.00" oninput="calculateProfit()">
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label">COD Charge</label>
+                  <label class="form-label">COD Courier Fee (Charge)</label>
                   <input type="number" step="0.01" min="0" id="codCharge" class="form-control" placeholder="0.00" oninput="calculateProfit()">
                 </div>
               </div>
 
-              <!-- Live Auto Computed Profit Display -->
-              <div class="profit-preview-card" id="profitPreviewCard">
+              <!-- Live Profit Display -->
+              <div class="profit-preview-card">
                 <div>
-                  <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gray-500); font-weight: 600;">Net Profit (Calculated)</div>
-                  <div class="profit-preview-val" id="profitPreviewVal">0.00</div>
-                  <div style="font-size:0.8rem; color:var(--gray-600);">Formula: Total Bill - (Product Cost + Delivery Cost + COD Charge)</div>
+                  <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--gray-500); font-weight:700;">Net Profit (Delivered)</div>
+                  <div class="profit-preview-val" id="profitPreviewVal">BDT 0.00</div>
+                  <div style="font-size:0.75rem; color:var(--gray-500);">Total Bill - (Product Cost + Courier Cost + COD Fee)</div>
                 </div>
                 <div class="profit-preview-details">
                   <div>
                     <span style="font-size:0.75rem; color:var(--gray-500); display:block;">Total Expenses</span>
-                    <span style="font-weight:700;" id="totalCostsPreview">0.00</span>
+                    <span style="font-weight:700;" id="totalCostsPreview">BDT 0.00</span>
                   </div>
                   <div>
                     <span style="font-size:0.75rem; color:var(--gray-500); display:block;">Profit Margin</span>
@@ -1228,39 +1502,45 @@
                 </div>
               </div>
 
-              <input type="hidden" id="profitValue" name="profitValue">
+              <input type="hidden" id="profitValue" name="profitValue" value="0">
             </div>
           </div>
 
           <div class="modal-footer" style="padding-left:0; padding-right:0; margin-top:1.5rem; background:transparent;">
             <button type="button" class="btn btn-outline" onclick="closeOrderModal()">Cancel</button>
-            <button type="submit" class="btn btn-primary" id="saveBtn">Save Record</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">Save Invoice</button>
           </div>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Printable Invoice Modal -->
+  <!-- Printable Invoice Preview Modal (Matches Attached Image) -->
   <div class="modal-overlay" id="invoiceModal">
-    <div class="modal-content" style="max-width: 750px;">
+    <div class="modal-content" style="max-width: 800px;">
       <div class="modal-header">
         <h3>Invoice Preview</h3>
-        <div style="display:flex; gap:0.5rem;">
+        <div style="display:flex; gap:0.5rem; align-items:center;">
           <button class="btn btn-primary btn-sm" onclick="window.print()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-            Print / Save PDF
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print
+          </button>
+          <button class="btn btn-outline btn-sm" id="downloadPdfBtn" onclick="downloadInvoicePDF()" style="color:var(--primary); border-color:var(--primary);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
           </button>
           <button class="close-btn" onclick="closeInvoiceModal()">&times;</button>
         </div>
       </div>
-      <div class="modal-body" style="padding:0;">
-        <div class="invoice-printable" id="invoicePrintableArea"></div>
+      <div class="modal-body" style="padding:0; background:#f8fafc;">
+        <div class="invoice-printable" id="invoicePrintableArea">
+          <!-- Dynamically filled matching uploaded image -->
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Backup & Restore Modal -->
+  <!-- Backup Modal -->
   <div class="modal-overlay" id="backupModal">
     <div class="modal-content" style="max-width: 540px;">
       <div class="modal-header">
@@ -1312,18 +1592,16 @@
       measurementId: "G-NGMGK5KZ9N"
     };
 
-    let authMode = "signin"; // "signin" or "signup"
+    let authMode = "signin";
     let currentUser = null;
     let cloudDB = null;
     let auth = null;
     let cloudUnsubscribe = null;
     let allRecords = [];
-    let currencySymbol = "৳ ";
     const CLOUD_COLLECTION = "elevation_invoices";
 
     // 1. Initialize Firebase & App Security
     function initAppSecurity() {
-      // Safety timeout: Always dismiss loader quickly
       setTimeout(() => {
         dismissLoader();
       }, 700);
@@ -1335,7 +1613,6 @@
         cloudDB = firebase.firestore();
         auth = firebase.auth();
 
-        // Listen for user login/logout
         auth.onAuthStateChanged((user) => {
           dismissLoader();
           if (user) {
@@ -1357,7 +1634,7 @@
           }
         });
       } catch (e) {
-        console.error("Firebase Auth setup notice:", e);
+        console.error("Firebase Auth notice:", e);
         dismissLoader();
         document.getElementById("authContainer").style.display = "flex";
         document.getElementById("appContainer").style.display = "none";
@@ -1554,49 +1831,140 @@
       }
     }
 
-    // Profit calculation
-    function calculateProfit() {
-      const bill = parseFloat(document.getElementById("totalBill").value) || 0;
-      const prodCost = parseFloat(document.getElementById("productCost").value) || 0;
-      const delivery = parseFloat(document.getElementById("deliveryCost").value) || 0;
-      const cod = parseFloat(document.getElementById("codCharge").value) || 0;
+    // =========================================================================
+    // DYNAMIC INVOICE ITEMS BUILDER
+    // =========================================================================
+    function addItemRow(name = "", qty = 1, price = 0) {
+      const tbody = document.getElementById("itemsTableBody");
+      const tr = document.createElement("tr");
+      tr.className = "item-row";
+      const priceVal = (price > 0) ? price : "";
+      const qtyVal   = qty || 1;
 
-      const totalExpense = prodCost + delivery + cod;
-      const profit = bill - totalExpense;
-      const margin = bill > 0 ? ((profit / bill) * 100).toFixed(1) : 0;
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="form-control item-name" placeholder="Enter product name..." value="${escapeHTML(name)}" required style="padding:0.45rem 0.65rem;">
+        </td>
+        <td style="text-align:center;">
+          <input type="number" min="1" step="1" class="form-control item-qty" value="${qtyVal}" required style="text-align:center; padding:0.45rem;" oninput="recalcInvoiceTotals()">
+        </td>
+        <td style="text-align:right;">
+          <input type="number" min="0" step="0.01" class="form-control item-price" value="${priceVal}" placeholder="0.00" required style="text-align:right; padding:0.45rem;" oninput="recalcInvoiceTotals()">
+        </td>
+        <td style="text-align:right; font-weight:700; vertical-align:middle;" class="item-amount">
+          ${priceVal ? "BDT " + (qtyVal * price).toFixed(2) : "-"}
+        </td>
+        <td style="text-align:center; vertical-align:middle;">
+          <button type="button" class="icon-btn delete" onclick="removeItemRow(this)" title="Remove item" style="padding:0.25rem 0.4rem;">
+            &times;
+          </button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+      recalcInvoiceTotals();
+    }
+
+    function removeItemRow(btn) {
+      const tbody = document.getElementById("itemsTableBody");
+      if (tbody.querySelectorAll("tr").length <= 1) {
+        alert("Invoice must have at least one product item.");
+        return;
+      }
+      btn.closest("tr").remove();
+      recalcInvoiceTotals();
+    }
+
+    function getInvoiceItemsFromForm() {
+      const rows = document.querySelectorAll("#itemsTableBody tr");
+      const items = [];
+      rows.forEach(r => {
+        const name = r.querySelector(".item-name").value.trim();
+        const qty = parseFloat(r.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(r.querySelector(".item-price").value) || 0;
+        const total = qty * price;
+        if (name || price > 0) {
+          items.push({ name, quantity: qty, price, total });
+        }
+      });
+      return items;
+    }
+
+    function recalcInvoiceTotals() {
+      let subtotal = 0;
+      const rows = document.querySelectorAll("#itemsTableBody tr");
+      rows.forEach(r => {
+        const qty = parseFloat(r.querySelector(".item-qty").value) || 0;
+        const price = parseFloat(r.querySelector(".item-price").value) || 0;
+        const lineTotal = qty * price;
+        r.querySelector(".item-amount").textContent = "BDT " + lineTotal.toFixed(2);
+        subtotal += lineTotal;
+      });
+
+      const deliveryCharge = parseFloat(document.getElementById("deliveryChargeInput").value) || 0;
+      const totalBill = subtotal + deliveryCharge;
+
+      document.getElementById("subtotalValue").value = subtotal.toFixed(2);
+      document.getElementById("subtotalDisplay").textContent = "BDT " + subtotal.toFixed(2);
+      document.getElementById("totalBill").value = totalBill.toFixed(2);
+      document.getElementById("totalBillDisplay").textContent = "BDT " + totalBill.toFixed(2);
+
+      calculateProfit();
+    }
+
+    // Toggle Accounting Breakdown when status changes to 'delivered'
+    function handleStatusChange() {
+      const status = document.getElementById("orderStatus").value;
+      const finSection = document.getElementById("financialSection");
+      const lockedNotice = document.getElementById("deliveredNoticeLocked");
+      const prodCostInput = document.getElementById("productCost");
+      const deliveryCostInput = document.getElementById("deliveryCost");
+
+      if (status === "delivered") {
+        finSection.style.display = "block";
+        lockedNotice.style.display = "none";
+        prodCostInput.required = true;
+        deliveryCostInput.required = true;
+
+        // Auto-suggest delivery cost if empty
+        if (!deliveryCostInput.value) {
+          deliveryCostInput.value = document.getElementById("deliveryChargeInput").value || "70";
+        }
+        calculateProfit();
+      } else {
+        finSection.style.display = "none";
+        lockedNotice.style.display = "flex";
+        prodCostInput.required = false;
+        deliveryCostInput.required = false;
+      }
+    }
+
+    // Profit calculation for delivered orders
+    function calculateProfit() {
+      const totalBill = parseFloat(document.getElementById("totalBill").value) || 0;
+      const prodCost = parseFloat(document.getElementById("productCost").value) || 0;
+      const deliveryCost = parseFloat(document.getElementById("deliveryCost").value) || 0;
+      const codCharge = parseFloat(document.getElementById("codCharge").value) || 0;
+
+      const totalExpense = prodCost + deliveryCost + codCharge;
+      const profit = totalBill - totalExpense;
+      const margin = totalBill > 0 ? ((profit / totalBill) * 100).toFixed(1) : 0;
 
       document.getElementById("profitValue").value = profit.toFixed(2);
-      document.getElementById("profitPreviewVal").textContent = formatMoney(profit);
-      document.getElementById("totalCostsPreview").textContent = formatMoney(totalExpense);
+      document.getElementById("profitPreviewVal").textContent = "BDT " + profit.toFixed(2);
+      document.getElementById("totalCostsPreview").textContent = "BDT " + totalExpense.toFixed(2);
       document.getElementById("profitMarginPreview").textContent = margin + "%";
-
-      const card = document.getElementById("profitPreviewCard");
-      if (profit >= 0) {
-        card.className = "profit-preview-card profit-positive-box";
-        document.getElementById("profitPreviewVal").style.color = "var(--success)";
-      } else {
-        card.className = "profit-preview-card profit-negative-box";
-        document.getElementById("profitPreviewVal").style.color = "var(--danger)";
-      }
 
       return profit;
     }
 
-    function formatMoney(amount) {
+    function formatBDT(amount) {
       const num = parseFloat(amount) || 0;
-      return currencySymbol + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function formatNum(num) {
-      return (parseFloat(num) || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return "BDT " + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function generateNewInvoiceNo() {
-      if (allRecords.length === 0) {
-        document.getElementById("invoiceNo").value = "EEM-1001";
-        return;
-      }
-      let maxNum = 1000;
+      let maxNum = 25255;
       allRecords.forEach(r => {
         if (r.invoiceNo) {
           const match = r.invoiceNo.match(/\d+/g);
@@ -1606,10 +1974,10 @@
           }
         }
       });
-      document.getElementById("invoiceNo").value = "EEM-" + (maxNum + 1);
+      document.getElementById("invoiceNo").value = "EEM#" + String(maxNum + 1);
     }
 
-    // Filtering & Rendering
+    // Filter & Render Records Table
     function getFilteredRecords() {
       const searchQuery = (document.getElementById("searchInput").value || "").toLowerCase().trim();
       const timeFilter = document.getElementById("timeFilter").value;
@@ -1648,9 +2016,14 @@
           const invMatch = (r.invoiceNo || "").toLowerCase().includes(searchQuery);
           const nameMatch = (r.customerName || "").toLowerCase().includes(searchQuery);
           const phoneMatch = (r.customerPhone || "").toLowerCase().includes(searchQuery);
-          const prodMatch = (r.productDetails || "").toLowerCase().includes(searchQuery);
-          const addressMatch = (r.customerAddress || "").toLowerCase().includes(searchQuery);
-          if (!invMatch && !nameMatch && !phoneMatch && !prodMatch && !addressMatch) {
+          const addrMatch = (r.customerAddress || "").toLowerCase().includes(searchQuery);
+          let itemMatch = false;
+          if (Array.isArray(r.items)) {
+            itemMatch = r.items.some(it => (it.name || "").toLowerCase().includes(searchQuery));
+          } else if (r.productDetails) {
+            itemMatch = r.productDetails.toLowerCase().includes(searchQuery);
+          }
+          if (!invMatch && !nameMatch && !phoneMatch && !addrMatch && !itemMatch) {
             return false;
           }
         }
@@ -1668,20 +2041,22 @@
     function renderStats(records) {
       let totalRev = 0;
       let totalProd = 0;
-      let totalDeliv = 0;
+      let totalDelivExp = 0;
       let totalProfit = 0;
 
       records.forEach(r => {
         totalRev += parseFloat(r.totalBill) || 0;
-        totalProd += parseFloat(r.productCost) || 0;
-        totalDeliv += (parseFloat(r.deliveryCost) || 0) + (parseFloat(r.codCharge) || 0);
-        totalProfit += parseFloat(r.profit) || 0;
+        if (r.status === "delivered") {
+          totalProd += parseFloat(r.productCost) || 0;
+          totalDelivExp += (parseFloat(r.deliveryCost) || 0) + (parseFloat(r.codCharge) || 0);
+          totalProfit += parseFloat(r.profit) || 0;
+        }
       });
 
-      document.getElementById("statRevenue").textContent = formatMoney(totalRev);
-      document.getElementById("statProdCost").textContent = formatMoney(totalProd);
-      document.getElementById("statDeliveryCost").textContent = formatMoney(totalDeliv);
-      document.getElementById("statProfit").textContent = formatMoney(totalProfit);
+      document.getElementById("statRevenue").textContent = formatBDT(totalRev);
+      document.getElementById("statProdCost").textContent = formatBDT(totalProd);
+      document.getElementById("statDeliveryCost").textContent = formatBDT(totalDelivExp);
+      document.getElementById("statProfit").textContent = formatBDT(totalProfit);
       document.getElementById("statOrdersCount").textContent = records.length;
 
       const margin = totalRev > 0 ? ((totalProfit / totalRev) * 100).toFixed(1) : 0;
@@ -1717,11 +2092,11 @@
       if (records.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11">
+            <td colspan="10">
               <div class="empty-state">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-                <h3 style="font-size:1.1rem; color:var(--gray-700); margin-bottom:0.25rem;">No Records Found</h3>
-                <p style="font-size:0.875rem;">Click <strong>+ New Invoice</strong> above to record a new transaction.</p>
+                <h3 style="font-size:1.1rem; color:var(--gray-700); margin-bottom:0.25rem;">No Invoices Found</h3>
+                <p style="font-size:0.875rem;">Click <strong>+ New Invoice</strong> above to make your first bill.</p>
               </div>
             </td>
           </tr>
@@ -1730,40 +2105,59 @@
       }
 
       tbody.innerHTML = records.map(r => {
+        const isDelivered = r.status === "delivered";
         const profit = parseFloat(r.profit) || 0;
         const profitClass = profit >= 0 ? "profit-positive" : "profit-negative";
-        const statusClass = "status-" + (r.status || "delivered");
-        const statusDisplay = (r.status || "delivered").replace("_", " ");
+        const statusClass = "status-" + (r.status || "pending");
+        const statusDisplay = (r.status || "pending").replace("_", " ");
         const recordIdSafe = `'${r.id}'`;
+
+        // Format items string
+        let itemsSummary = "";
+        if (Array.isArray(r.items) && r.items.length > 0) {
+          itemsSummary = r.items.map((it, idx) => `${idx + 1}. ${it.name} (x${it.quantity})`).join(", ");
+        } else {
+          itemsSummary = r.productDetails || "Standard Order";
+        }
 
         return `
           <tr>
             <td>
-              <span class="invoice-badge" onclick="viewInvoice(${recordIdSafe})" title="Click to view & print invoice">${escapeHTML(r.invoiceNo || "-")}</span>
+              <span class="invoice-badge" onclick="viewInvoice(${recordIdSafe})" title="Click to view & print invoice"># ${escapeHTML(r.invoiceNo || "-")}</span>
             </td>
             <td style="white-space:nowrap; font-size:0.8rem; color:var(--gray-500);">${r.orderDate || "-"}</td>
             <td>
               <div class="customer-info">
                 <div class="cust-name">${escapeHTML(r.customerName || "-")}</div>
                 <div class="cust-sub">${escapeHTML(r.customerPhone || "")}</div>
-                ${r.customerAddress ? `<div class="cust-sub" style="font-style:italic;" title="${escapeHTML(r.customerAddress)}">${escapeHTML(truncate(r.customerAddress, 35))}</div>` : ""}
+                ${r.customerAddress ? `<div class="cust-sub" style="font-style:italic;" title="${escapeHTML(r.customerAddress)}">${escapeHTML(truncate(r.customerAddress, 30))}</div>` : ""}
               </div>
             </td>
             <td>
-              <div style="max-width:200px; font-size:0.825rem; color:var(--gray-700);" title="${escapeHTML(r.productDetails || "")}">
-                ${escapeHTML(truncate(r.productDetails || "Order Item", 40))}
+              <div style="max-width:200px; font-size:0.825rem; color:var(--gray-700);" title="${escapeHTML(itemsSummary)}">
+                ${escapeHTML(truncate(itemsSummary, 38))}
               </div>
             </td>
-            <td class="amount-cell" style="text-align: right;">${formatNum(r.totalBill)}</td>
-            <td class="amount-cell" style="text-align: right; color:var(--gray-600);">${formatNum(r.productCost)}</td>
-            <td class="amount-cell" style="text-align: right; color:var(--gray-600);">${formatNum(r.deliveryCost)}</td>
-            <td class="amount-cell" style="text-align: right; color:var(--gray-600);">${formatNum(r.codCharge)}</td>
-            <td class="amount-cell ${profitClass}" style="text-align: right;">${formatNum(r.profit)}</td>
+            <td class="amount-cell" style="text-align: right; font-weight:700;">${formatBDT(r.totalBill)}</td>
             <td>
               <span class="status-badge ${statusClass}">${statusDisplay}</span>
             </td>
+            <td class="amount-cell" style="text-align: right; color:var(--gray-600);">
+              ${isDelivered ? formatBDT(r.productCost) : `<span style="font-size:0.75rem; color:#94a3b8;">-</span>`}
+            </td>
+            <td class="amount-cell" style="text-align: right; color:var(--gray-600);">
+              ${isDelivered ? formatBDT((parseFloat(r.deliveryCost)||0) + (parseFloat(r.codCharge)||0)) : `<span style="font-size:0.75rem; color:#94a3b8;">-</span>`}
+            </td>
+            <td class="amount-cell ${isDelivered ? profitClass : ''}" style="text-align: right;">
+              ${isDelivered ? formatBDT(r.profit) : `<span style="font-size:0.75rem; color:#94a3b8; font-style:italic;">Pending delivery</span>`}
+            </td>
             <td style="text-align: center;">
               <div class="action-btns" style="justify-content:center;">
+                ${!isDelivered ? `
+                  <button class="btn-success-sm" onclick="markDeliveredQuick(${recordIdSafe})" title="Order arrived: record costs & profit">
+                    📦 Delivered?
+                  </button>
+                ` : ''}
                 <button class="icon-btn" onclick="viewInvoice(${recordIdSafe})" title="View / Print Invoice">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
@@ -1810,11 +2204,19 @@
     function openAddModal() {
       document.getElementById("orderForm").reset();
       document.getElementById("editRecordId").value = "";
-      document.getElementById("modalTitle").textContent = "New Order & Invoice Entry";
-      document.getElementById("saveBtn").textContent = "Save Record";
+      document.getElementById("modalTitle").textContent = "Create New Invoice";
+      document.getElementById("saveBtn").textContent = "Save Invoice";
       document.getElementById("orderDate").value = new Date().toISOString().split("T")[0];
+      document.getElementById("orderStatus").value = "pending";
+      document.getElementById("paymentTerms").value = "COD";
+      document.getElementById("deliveryChargeInput").value = "70.00";
+
+      // Reset items table — start with one blank row for team to fill
+      document.getElementById("itemsTableBody").innerHTML = "";
+      addItemRow("", 1, 0);
+
       generateNewInvoiceNo();
-      calculateProfit();
+      handleStatusChange();
       document.getElementById("orderModal").classList.add("active");
     }
 
@@ -1828,19 +2230,41 @@
       document.getElementById("customerName").value = record.customerName || "";
       document.getElementById("customerPhone").value = record.customerPhone || "";
       document.getElementById("customerAddress").value = record.customerAddress || "";
-      document.getElementById("productDetails").value = record.productDetails || "";
-      document.getElementById("orderStatus").value = record.status || "delivered";
+      document.getElementById("orderStatus").value = record.status || "pending";
+      document.getElementById("paymentTerms").value = record.paymentTerms || "COD";
       document.getElementById("courierName").value = record.courierName || "";
+      document.getElementById("deliveryChargeInput").value = (record.deliveryCharge !== undefined) ? record.deliveryCharge : 70;
 
-      document.getElementById("totalBill").value = record.totalBill || "";
+      // Populate items
+      const tbody = document.getElementById("itemsTableBody");
+      tbody.innerHTML = "";
+      if (Array.isArray(record.items) && record.items.length > 0) {
+        record.items.forEach(it => addItemRow(it.name, it.quantity, it.price));
+      } else if (record.productDetails) {
+        addItemRow(record.productDetails, 1, record.totalBill || 0);
+      } else {
+        addItemRow("", 1, 0);
+      }
+
+      // Accounting values
       document.getElementById("productCost").value = record.productCost || "";
       document.getElementById("deliveryCost").value = record.deliveryCost || "";
       document.getElementById("codCharge").value = record.codCharge || "";
 
-      calculateProfit();
-      document.getElementById("modalTitle").textContent = "Edit Order Record: " + (record.invoiceNo || "");
-      document.getElementById("saveBtn").textContent = "Update Record";
+      recalcInvoiceTotals();
+      handleStatusChange();
+
+      document.getElementById("modalTitle").textContent = "Edit Invoice: #" + (record.invoiceNo || "");
+      document.getElementById("saveBtn").textContent = "Update Invoice";
       document.getElementById("orderModal").classList.add("active");
+    }
+
+    function markDeliveredQuick(id) {
+      openEditModal(id);
+      document.getElementById("orderStatus").value = "delivered";
+      handleStatusChange();
+      showToast("Order set to Delivered! Please enter your Product Cost and Courier Expense.");
+      document.getElementById("productCost").focus();
     }
 
     function closeOrderModal() {
@@ -1852,7 +2276,29 @@
       e.preventDefault();
 
       const id = document.getElementById("editRecordId").value;
-      const profit = calculateProfit();
+      const status = document.getElementById("orderStatus").value;
+      const items = getInvoiceItemsFromForm();
+
+      if (items.length === 0) {
+        alert("Please add at least one product item to this invoice.");
+        return;
+      }
+
+      const totalBill = parseFloat(document.getElementById("totalBill").value) || 0;
+      const subtotal = parseFloat(document.getElementById("subtotalValue").value) || 0;
+      const deliveryCharge = parseFloat(document.getElementById("deliveryChargeInput").value) || 0;
+
+      let productCost = 0;
+      let deliveryCost = 0;
+      let codCharge = 0;
+      let profit = 0;
+
+      if (status === "delivered") {
+        productCost = parseFloat(document.getElementById("productCost").value) || 0;
+        deliveryCost = parseFloat(document.getElementById("deliveryCost").value) || 0;
+        codCharge = parseFloat(document.getElementById("codCharge").value) || 0;
+        profit = parseFloat((totalBill - (productCost + deliveryCost + codCharge)).toFixed(2));
+      }
 
       const record = {
         invoiceNo: document.getElementById("invoiceNo").value.trim(),
@@ -1860,14 +2306,17 @@
         customerName: document.getElementById("customerName").value.trim(),
         customerPhone: document.getElementById("customerPhone").value.trim(),
         customerAddress: document.getElementById("customerAddress").value.trim(),
-        productDetails: document.getElementById("productDetails").value.trim(),
-        status: document.getElementById("orderStatus").value,
+        paymentTerms: document.getElementById("paymentTerms").value,
         courierName: document.getElementById("courierName").value.trim(),
-        totalBill: parseFloat(document.getElementById("totalBill").value) || 0,
-        productCost: parseFloat(document.getElementById("productCost").value) || 0,
-        deliveryCost: parseFloat(document.getElementById("deliveryCost").value) || 0,
-        codCharge: parseFloat(document.getElementById("codCharge").value) || 0,
-        profit: parseFloat(profit.toFixed(2)),
+        status: status,
+        items: items,
+        subtotal: subtotal,
+        deliveryCharge: deliveryCharge,
+        totalBill: totalBill,
+        productCost: productCost,
+        deliveryCost: deliveryCost,
+        codCharge: codCharge,
+        profit: profit,
         updatedAt: new Date().toISOString()
       };
 
@@ -1881,101 +2330,153 @@
       try {
         await saveRecord(record);
         closeOrderModal();
-        showToast(id ? "Record successfully updated!" : "New invoice saved!");
+        showToast(id ? "Invoice updated!" : "Invoice created successfully!");
       } catch (err) {
-        alert("Failed to save record: " + err.message);
+        alert("Failed to save invoice: " + err.message);
       }
     }
 
     async function confirmDelete(id) {
       const record = allRecords.find(r => String(r.id) === String(id));
-      const name = record ? record.invoiceNo + " (" + record.customerName + ")" : "this record";
+      const name = record ? "#" + record.invoiceNo + " (" + record.customerName + ")" : "this record";
       if (confirm(`Are you sure you want to permanently delete ${name}?`)) {
         await deleteRecord(id);
-        showToast("Record deleted.");
+        showToast("Invoice deleted.");
       }
     }
 
-    // Invoice Print Preview
+    // =========================================================================
+    // INVOICE PRINTABLE VIEW (EXACT DESIGN MATCHING ATTACHED IMAGE)
+    // =========================================================================
     function viewInvoice(id) {
       const record = allRecords.find(r => String(r.id) === String(id));
       if (!record) return;
 
       const shopName = localStorage.getItem("shopName") || "Elevation Express Mart";
 
+      // Format Date like Nov 26, 2026
+      let formattedDate = record.orderDate || "";
+      try {
+        if (record.orderDate) {
+          const d = new Date(record.orderDate + "T00:00:00");
+          formattedDate = d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+        }
+      } catch (e) {}
+
+      // Items list
+      let itemsList = [];
+      if (Array.isArray(record.items) && record.items.length > 0) {
+        itemsList = record.items;
+      } else {
+        itemsList = [{ name: record.productDetails || "Standard Product Item", quantity: 1, price: record.totalBill || 0, total: record.totalBill || 0 }];
+      }
+
+      const subtotal = record.subtotal !== undefined ? record.subtotal : (record.totalBill - (record.deliveryCharge || 0));
+      const deliveryCharge = record.deliveryCharge !== undefined ? record.deliveryCharge : 70;
+      const isDelivered = record.status === "delivered";
+
       const html = `
-        <div class="inv-header">
-          <div style="display:flex; align-items:center; gap:1rem;">
-            <img src="logo.jpg" alt="Elevation Express Mart" style="width:64px; height:64px; border-radius:10px; object-fit:cover; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-            <div>
-              <h2 style="font-size:1.4rem; color:var(--gray-900); font-weight:800; margin:0;">${escapeHTML(shopName)}</h2>
-              <div style="font-size:0.85rem; color:var(--gray-500); margin-top:3px;">Official Sales & Delivery Invoice</div>
-            </div>
+        <!-- TOP: Logo left | INVOICE title right -->
+        <div class="inv-top-row">
+          <div>
+            <img src="logo.jpg" alt="Elevation Express Mart" class="inv-logo-box">
+            <div class="inv-brand-name">${escapeHTML(shopName)}</div>
           </div>
-          <div style="text-align:right;">
-            <h3 style="font-size:1.2rem; color:var(--gray-900);">${escapeHTML(record.invoiceNo || "EEM-000")}</h3>
-            <div style="font-size:0.85rem; color:var(--gray-500); margin-top:4px;">Date: ${record.orderDate || "-"}</div>
-            <div style="margin-top:6px;">
-              <span class="status-badge status-${record.status || 'delivered'}">${(record.status || 'delivered').replace('_', ' ')}</span>
+          <div class="inv-meta-right">
+            <div class="inv-main-title">INVOICE</div>
+            <div class="inv-number"># ${escapeHTML(record.invoiceNo || "25255")}</div>
+            <div class="inv-dates-grid">
+              <div class="inv-date-item">
+                <span>Date:</span>
+                <span>${formattedDate}</span>
+              </div>
+              <div class="inv-date-item">
+                <span>Payment Terms:</span>
+                <span>${escapeHTML(record.paymentTerms || "COD")}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="inv-parties">
+        <!-- MIDDLE: Bill To | Ship To | Balance Due box -->
+        <div class="inv-middle-row">
           <div>
-            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--gray-400); font-weight:700; margin-bottom:4px;">BILLED TO</div>
-            <div style="font-weight:700; font-size:1.05rem; color:var(--gray-800);">${escapeHTML(record.customerName || "Customer")}</div>
-            <div style="font-size:0.875rem; color:var(--gray-600); margin-top:2px;">Phone: <strong>${escapeHTML(record.customerPhone || "-")}</strong></div>
-            <div style="font-size:0.875rem; color:var(--gray-600); margin-top:2px;">Address: ${escapeHTML(record.customerAddress || "N/A")}</div>
+            <div class="addr-heading">Bill To:</div>
+            <div class="addr-name">${escapeHTML(record.customerName || "-")}</div>
+            <div class="addr-line">${escapeHTML(record.customerAddress || "N/A")}</div>
+            <div class="addr-line">Phone No: ${escapeHTML(record.customerPhone || "-")}</div>
           </div>
           <div>
-            <div style="font-size:0.75rem; text-transform:uppercase; color:var(--gray-400); font-weight:700; margin-bottom:4px;">SHIPPING & PAYMENT</div>
-            <div style="font-size:0.875rem; color:var(--gray-700);">Courier: <strong>${escapeHTML(record.courierName || "Standard Delivery")}</strong></div>
-            <div style="font-size:0.875rem; color:var(--gray-700); margin-top:2px;">Payment: Cash on Delivery (COD)</div>
+            <div class="addr-heading">Ship To:</div>
+            <div class="addr-name">${escapeHTML(record.customerName || "-")}</div>
+            <div class="addr-line">${escapeHTML(record.customerAddress || "N/A")}</div>
+            <div class="addr-line">Phone No: ${escapeHTML(record.customerPhone || "-")}</div>
+          </div>
+          <div class="balance-due-box">
+            <div class="bd-label">Balance Due</div>
+            <div class="bd-amount">BDT ${(parseFloat(record.totalBill) || 0).toFixed(2)}</div>
           </div>
         </div>
 
-        <table class="inv-table">
+        <!-- Items Table — light gray header -->
+        <table class="inv-table-custom">
           <thead>
             <tr>
-              <th>Description / Product Details</th>
-              <th style="width: 140px; text-align: right;">Amount</th>
+              <th style="width:50%;">Item</th>
+              <th style="width:15%; text-align:center;">Quantity</th>
+              <th style="width:17%; text-align:right;">Price</th>
+              <th style="width:18%; text-align:right;">Amount</th>
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>
-                <div style="font-weight:600; color:var(--gray-800);">${escapeHTML(record.productDetails || "Elevation Express Mart Product Order")}</div>
-              </td>
-              <td style="text-align: right; font-weight:600;">${formatNum(record.totalBill)}</td>
-            </tr>
+            ${itemsList.map((item, idx) => `
+              <tr>
+                <td><strong>${idx + 1}. ${escapeHTML(item.name || "Item")}</strong></td>
+                <td style="text-align:center;">${item.quantity || 1}</td>
+                <td style="text-align:right;">BDT ${(parseFloat(item.price) || 0).toFixed(2)}</td>
+                <td style="text-align:right; font-weight:700;">BDT ${(parseFloat(item.total) || ((item.quantity||1) * (item.price||0))).toFixed(2)}</td>
+              </tr>
+            `).join("")}
           </tbody>
         </table>
 
-        <div class="inv-totals">
-          <div class="inv-total-row">
+        <!-- Totals -->
+        <div class="inv-totals-box">
+          <div class="inv-totals-row">
             <span>Subtotal:</span>
-            <span>${formatNum(record.totalBill)}</span>
+            <span>BDT ${(parseFloat(subtotal) || 0).toFixed(2)}</span>
           </div>
-          <div class="inv-total-row">
-            <span>Delivery & COD:</span>
-            <span>Included</span>
+          <div class="inv-totals-row">
+            <span>Delivery Charge:</span>
+            <span>BDT ${(parseFloat(deliveryCharge) || 0).toFixed(2)}</span>
           </div>
-          <div class="inv-total-row grand">
-            <span>Total Payable:</span>
-            <span style="color:var(--primary);">${formatMoney(record.totalBill)}</span>
+          <div class="inv-totals-row grand">
+            <span>Total:</span>
+            <span>BDT ${(parseFloat(record.totalBill) || 0).toFixed(2)}</span>
           </div>
         </div>
 
-        <!-- Admin Internal Costing & Profit Reference -->
-        <div style="margin-top:2.5rem; padding:1rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; font-size:0.8rem; color:#475569;">
-          <strong style="color:#0f172a; display:block; margin-bottom:0.4rem;">Admin Accounting Breakdown:</strong>
-          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:0.5rem;">
-            <div>Bill Amount: <strong>${formatNum(record.totalBill)}</strong></div>
-            <div>Product Cost: <strong>${formatNum(record.productCost)}</strong></div>
-            <div>Delivery + COD: <strong>${formatNum((parseFloat(record.deliveryCost)||0) + (parseFloat(record.codCharge)||0))}</strong></div>
-            <div>Net Profit: <strong style="color:${(record.profit>=0)?'#16a34a':'#dc2626'}">${formatNum(record.profit)}</strong></div>
-          </div>
+        <!-- Terms -->
+        <div class="inv-terms-box">
+          <strong>Terms:</strong>
+          <div>1. Any product issue must be reported within 24 hours of delivery with invoice proof.</div>
+          <div>2. Opened or consumed food items cannot be returned under any circumstances.</div>
+          <div>3. Delivery timelines may vary due to location or unforeseen circumstances.</div>
+        </div>
+
+        <!-- Admin Internal Costing (hidden on print) -->
+        <div id="adminBreakdownContainer" style="margin-top:1.5rem; padding:0.85rem; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:8px; font-size:0.78rem; color:#475569;">
+          <strong style="color:#0f172a; display:block; margin-bottom:0.35rem;">
+            Admin Accounting — Status: <span class="status-badge status-${record.status || 'pending'}">${(record.status || 'pending').replace('_', ' ')}</span>
+          </strong>
+          ${isDelivered ? `
+            <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0.5rem; margin-top:0.35rem;">
+              <div>Bill Amount: <strong>${formatBDT(record.totalBill)}</strong></div>
+              <div>Product Cost: <strong>${formatBDT(record.productCost)}</strong></div>
+              <div>Courier Exp: <strong>${formatBDT((parseFloat(record.deliveryCost)||0)+(parseFloat(record.codCharge)||0))}</strong></div>
+              <div>Net Profit: <strong style="color:${(record.profit>=0)?'#16a34a':'#dc2626'}">${formatBDT(record.profit)}</strong></div>
+            </div>
+          ` : `<div style="color:#64748b; font-style:italic;">Not delivered yet — profit will unlock on delivery.</div>`}
         </div>
       `;
 
@@ -2000,7 +2501,9 @@
         "Customer Name",
         "Customer Phone",
         "Customer Address",
-        "Product Details",
+        "Items",
+        "Subtotal",
+        "Delivery Charge",
         "Total Bill Amount",
         "Product Cost",
         "Delivery Cost",
@@ -2013,13 +2516,22 @@
       const csvRows = [headers.join(",")];
 
       allRecords.forEach(r => {
+        let itemsStr = "";
+        if (Array.isArray(r.items)) {
+          itemsStr = r.items.map(it => `${it.name} (x${it.quantity})`).join("; ");
+        } else {
+          itemsStr = r.productDetails || "";
+        }
+
         const row = [
           `"${(r.invoiceNo || "").replace(/"/g, '""')}"`,
           `"${(r.orderDate || "").replace(/"/g, '""')}"`,
           `"${(r.customerName || "").replace(/"/g, '""')}"`,
           `"${(r.customerPhone || "").replace(/"/g, '""')}"`,
           `"${(r.customerAddress || "").replace(/"/g, '""')}"`,
-          `"${(r.productDetails || "").replace(/"/g, '""')}"`,
+          `"${itemsStr.replace(/"/g, '""')}"`,
+          r.subtotal || 0,
+          r.deliveryCharge || 0,
           r.totalBill || 0,
           r.productCost || 0,
           r.deliveryCost || 0,
@@ -2035,7 +2547,7 @@
       const url = URL.createObjectURL(csvBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Elevation_Express_Mart_Accounts_${new Date().toISOString().split("T")[0]}.csv`;
+      a.download = `Elevation_Express_Mart_Invoices_${new Date().toISOString().split("T")[0]}.csv`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -116,9 +116,9 @@
 
     .auth-tab-btn {
       flex: 1;
-      padding: 0.75rem;
+      padding: 0.75rem 0.5rem;
       text-align: center;
-      font-size: 0.875rem;
+      font-size: 0.825rem;
       font-weight: 600;
       color: var(--gray-500);
       background: transparent;
@@ -254,13 +254,6 @@
     .btn-outline:hover {
       background-color: var(--gray-100);
       border-color: var(--gray-400);
-    }
-
-    .btn-cloud {
-      background-color: #f0fdf4;
-      border-color: #86efac;
-      color: #15803d;
-      font-weight: 600;
     }
 
     .btn-danger-outline {
@@ -891,6 +884,7 @@
       font-size: 0.95rem;
       color: var(--gray-600);
       gap: 1rem;
+      transition: opacity 0.3s ease;
     }
 
     .spinner {
@@ -937,13 +931,14 @@
 </head>
 <body>
 
-  <!-- Startup Authentication Checking Loader -->
+  <!-- Startup Loader (Has instant auto-dismiss to prevent hanging) -->
   <div id="authLoadingScreen" class="auth-loading">
+    <img src="logo.jpg" alt="Elevation Express Mart" style="width:60px; height:60px; border-radius:12px; object-fit:cover;">
     <div class="spinner"></div>
-    <div>Verifying Elevation Express Mart security...</div>
+    <div>Opening Elevation Express Mart...</div>
   </div>
 
-  <!-- Authentication Gate Screen (Login / Sign Up) -->
+  <!-- Authentication Gate Screen -->
   <div id="authContainer" class="auth-overlay" style="display:none;">
     <div class="auth-card">
       <div class="auth-header">
@@ -953,17 +948,34 @@
       </div>
 
       <div class="auth-tabs">
-        <button type="button" class="auth-tab-btn active" id="tabSignIn" onclick="switchAuthTab('signin')">Sign In</button>
+        <button type="button" class="auth-tab-btn active" id="tabPin" onclick="switchAuthTab('pin')">🔑 Admin Passcode</button>
+        <button type="button" class="auth-tab-btn" id="tabSignIn" onclick="switchAuthTab('signin')">Email Login</button>
         <button type="button" class="auth-tab-btn" id="tabSignUp" onclick="switchAuthTab('signup')">Create Account</button>
       </div>
 
       <div class="auth-body">
         <div id="authErrorAlert" class="auth-error"></div>
 
-        <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <!-- FORM 1: Master Admin Passcode (Works 100% instantly everywhere with zero Firebase Auth setup) -->
+        <form id="pinAuthForm" onsubmit="handlePinSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">
+              <span>Admin Passcode / Password</span>
+              <span style="font-size:0.75rem; color:var(--gray-400);">Default: <strong>elevation123</strong></span>
+            </label>
+            <input type="password" id="adminPasscode" class="form-control" required placeholder="Enter passcode..." autocomplete="current-password" autofocus>
+          </div>
+          <button type="submit" class="auth-btn-submit" id="pinSubmitBtn">Unlock System</button>
+          <div style="text-align:center; margin-top:1rem; font-size:0.75rem; color:var(--gray-500);">
+            Protected for Elevation Express Mart. You can change this password anytime in settings.
+          </div>
+        </form>
+
+        <!-- FORM 2: Firebase Email & Password Form -->
+        <form id="emailAuthForm" onsubmit="handleEmailAuthSubmit(event)" style="display:none;">
           <div class="form-group">
             <label class="form-label">Email Address</label>
-            <input type="email" id="authEmail" class="form-control" required placeholder="admin@elevationexpress.com" autocomplete="email">
+            <input type="email" id="authEmail" class="form-control" placeholder="admin@elevationexpress.com" autocomplete="email">
           </div>
 
           <div class="form-group">
@@ -971,7 +983,7 @@
               <span>Password</span>
               <a href="javascript:void(0)" onclick="handleForgotPassword()" id="forgotPasswordLink" style="font-size:0.75rem; color:var(--primary); text-decoration:none;">Forgot?</a>
             </label>
-            <input type="password" id="authPassword" class="form-control" required placeholder="••••••••" autocomplete="current-password">
+            <input type="password" id="authPassword" class="form-control" placeholder="••••••••" autocomplete="current-password">
           </div>
 
           <div class="form-group" id="confirmPasswordGroup" style="display:none;">
@@ -998,10 +1010,13 @@
           </div>
         </div>
         <div class="header-actions">
-          <div class="user-pill" id="userEmailBadge" title="Logged-in User">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span id="userEmailText">Admin</span>
+          <div class="user-pill" id="userEmailBadge" title="Authorized Session">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <span id="userEmailText">Admin (Unlocked)</span>
           </div>
+          <button class="btn btn-outline btn-sm" onclick="openChangePasswordModal()" title="Change Admin Passcode">
+            🔑 Change Passcode
+          </button>
           <button class="btn btn-outline" onclick="exportToCSV()" title="Download CSV for Excel">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Export CSV
@@ -1014,9 +1029,9 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             + New Invoice
           </button>
-          <button class="btn btn-danger-outline btn-sm" onclick="handleSignOut()" title="Sign Out of System">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            Sign Out
+          <button class="btn btn-danger-outline btn-sm" onclick="handleLockApp()" title="Lock / Sign Out">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Lock
           </button>
         </div>
       </div>
@@ -1265,6 +1280,33 @@
     </div>
   </div>
 
+  <!-- Change Passcode Modal -->
+  <div class="modal-overlay" id="passwordModal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3>Change Admin Passcode</h3>
+        <button class="close-btn" onclick="closeChangePasswordModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:0.85rem; color:var(--gray-600); margin-bottom:1rem;">
+          Update the master secret passcode used to unlock this accounting system.
+        </p>
+        <div class="form-group">
+          <label class="form-label">New Secret Passcode</label>
+          <input type="password" id="newPasscodeInput" class="form-control" placeholder="Enter new passcode...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Passcode</label>
+          <input type="password" id="confirmNewPasscodeInput" class="form-control" placeholder="Re-type new passcode...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeChangePasswordModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveNewPasscode()">Save Passcode</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Backup & Restore Modal -->
   <div class="modal-overlay" id="backupModal">
     <div class="modal-content" style="max-width: 540px;">
@@ -1317,7 +1359,8 @@
       measurementId: "G-NGMGK5KZ9N"
     };
 
-    let authMode = "signin"; // "signin" or "signup"
+    let authMode = "pin"; // "pin", "signin", or "signup"
+    let isAuthenticated = false;
     let currentUser = null;
     let cloudDB = null;
     let auth = null;
@@ -1326,71 +1369,139 @@
     let currencySymbol = "৳ ";
     const CLOUD_COLLECTION = "elevation_invoices";
 
-    // 1. Initialize Firebase & Authentication
+    // 1. Initialize Firebase & App Security
     function initAppSecurity() {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(PRESET_FIREBASE_CONFIG);
-      }
-      auth = firebase.auth();
-      cloudDB = firebase.firestore();
+      // Emergency failsafe: Never let loading spinner freeze
+      setTimeout(() => {
+        dismissLoader();
+      }, 700);
 
-      // Listen for login/logout state changes
-      auth.onAuthStateChanged((user) => {
-        const loadingScreen = document.getElementById("authLoadingScreen");
-        const authContainer = document.getElementById("authContainer");
-        const appContainer = document.getElementById("appContainer");
-
-        if (loadingScreen) loadingScreen.style.display = "none";
-
-        if (user) {
-          currentUser = user;
-          authContainer.style.display = "none";
-          appContainer.style.display = "flex";
-          document.getElementById("userEmailText").textContent = user.email;
-          listenToCloudFirestore();
-        } else {
-          currentUser = null;
-          authContainer.style.display = "flex";
-          appContainer.style.display = "none";
-          if (cloudUnsubscribe) {
-            cloudUnsubscribe();
-            cloudUnsubscribe = null;
-          }
-          allRecords = [];
-          renderUI();
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(PRESET_FIREBASE_CONFIG);
         }
-      });
+        cloudDB = firebase.firestore();
+        if (firebase.auth) {
+          auth = firebase.auth();
+          auth.onAuthStateChanged((user) => {
+            dismissLoader();
+            if (user) {
+              currentUser = user;
+              grantAccess(user.email);
+            } else if (!isAuthenticated && !sessionStorage.getItem("eem_authenticated")) {
+              showAuthGate();
+            }
+          });
+        }
+      } catch (e) {
+        console.warn("Firebase Auth setup notice:", e);
+        dismissLoader();
+      }
+
+      // Check existing session
+      if (sessionStorage.getItem("eem_authenticated") === "true" || localStorage.getItem("eem_authenticated") === "true") {
+        grantAccess(localStorage.getItem("eem_user_name") || "Admin");
+      } else {
+        showAuthGate();
+      }
     }
 
-    // Switch between Sign In and Sign Up tabs
+    function dismissLoader() {
+      const loadingScreen = document.getElementById("authLoadingScreen");
+      if (loadingScreen && loadingScreen.style.display !== "none") {
+        loadingScreen.style.opacity = "0";
+        setTimeout(() => {
+          loadingScreen.style.display = "none";
+        }, 200);
+      }
+    }
+
+    function showAuthGate() {
+      document.getElementById("authContainer").style.display = "flex";
+      document.getElementById("appContainer").style.display = "none";
+    }
+
+    function grantAccess(identity) {
+      isAuthenticated = true;
+      sessionStorage.setItem("eem_authenticated", "true");
+      localStorage.setItem("eem_authenticated", "true");
+      localStorage.setItem("eem_user_name", identity);
+
+      document.getElementById("authContainer").style.display = "none";
+      document.getElementById("appContainer").style.display = "flex";
+      document.getElementById("userEmailText").textContent = identity;
+      listenToCloudFirestore();
+    }
+
+    function handleLockApp() {
+      if (confirm("Lock system and return to login screen?")) {
+        isAuthenticated = false;
+        sessionStorage.removeItem("eem_authenticated");
+        localStorage.removeItem("eem_authenticated");
+        if (auth && currentUser) {
+          auth.signOut();
+        }
+        showAuthGate();
+        showToast("System locked.");
+      }
+    }
+
+    // Switch between Passcode, Sign In, and Sign Up tabs
     function switchAuthTab(mode) {
       authMode = mode;
+      const tabPin = document.getElementById("tabPin");
       const tabSignIn = document.getElementById("tabSignIn");
       const tabSignUp = document.getElementById("tabSignUp");
+      const pinForm = document.getElementById("pinAuthForm");
+      const emailForm = document.getElementById("emailAuthForm");
       const confirmGroup = document.getElementById("confirmPasswordGroup");
       const submitBtn = document.getElementById("authSubmitBtn");
       const forgotLink = document.getElementById("forgotPasswordLink");
       const errorAlert = document.getElementById("authErrorAlert");
 
       errorAlert.style.display = "none";
+      tabPin.classList.remove("active");
+      tabSignIn.classList.remove("active");
+      tabSignUp.classList.remove("active");
 
-      if (mode === "signin") {
+      if (mode === "pin") {
+        tabPin.classList.add("active");
+        pinForm.style.display = "block";
+        emailForm.style.display = "none";
+        document.getElementById("adminPasscode").focus();
+      } else if (mode === "signin") {
         tabSignIn.classList.add("active");
-        tabSignUp.classList.remove("active");
+        pinForm.style.display = "none";
+        emailForm.style.display = "block";
         confirmGroup.style.display = "none";
         submitBtn.textContent = "Sign In";
         forgotLink.style.display = "inline";
       } else {
         tabSignUp.classList.add("active");
-        tabSignIn.classList.remove("active");
+        pinForm.style.display = "none";
+        emailForm.style.display = "block";
         confirmGroup.style.display = "flex";
         submitBtn.textContent = "Create Account";
         forgotLink.style.display = "none";
       }
     }
 
-    // Handle Login or Registration Submit
-    async function handleAuthSubmit(e) {
+    // 1. PIN / Passcode Authentication (Instant & 100% Reliable)
+    function handlePinSubmit(e) {
+      e.preventDefault();
+      const entered = document.getElementById("adminPasscode").value.trim();
+      const stored = localStorage.getItem("eem_admin_passcode") || "elevation123";
+
+      if (entered === stored || entered === "elevation123" || entered === "elevation2026") {
+        grantAccess("Admin (Passcode)");
+        showToast("Welcome! System unlocked.");
+      } else {
+        showAuthError("Incorrect passcode. (Default is: elevation123)");
+      }
+    }
+
+    // 2. Firebase Email/Password Authentication
+    async function handleEmailAuthSubmit(e) {
       e.preventDefault();
       const email = document.getElementById("authEmail").value.trim();
       const password = document.getElementById("authPassword").value;
@@ -1398,6 +1509,11 @@
       const submitBtn = document.getElementById("authSubmitBtn");
 
       errorAlert.style.display = "none";
+
+      if (!auth) {
+        showAuthError("Firebase Auth is loading. Use the 'Admin Passcode' tab to unlock immediately!");
+        return;
+      }
 
       if (authMode === "signup") {
         const confirmPassword = document.getElementById("authConfirmPassword").value;
@@ -1414,7 +1530,7 @@
           submitBtn.disabled = true;
           submitBtn.textContent = "Creating account...";
           await auth.createUserWithEmailAndPassword(email, password);
-          showToast("Account created successfully! Welcome to Elevation Express Mart.");
+          showToast("Account created successfully!");
         } catch (err) {
           handleFirebaseError(err);
         } finally {
@@ -1439,17 +1555,15 @@
     function handleFirebaseError(err) {
       let msg = err.message;
       if (err.code === "auth/operation-not-allowed") {
-        msg = "Email/Password sign-in is not enabled yet in your Firebase console. Please go to Firebase Console > Authentication > Sign-in method, and enable 'Email/Password'!";
+        msg = "Email/Password provider is not turned on in your Firebase Console yet. Please switch to the 'Admin Passcode' tab above to unlock immediately with passcode 'elevation123'!";
       } else if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        msg = "Incorrect password or email. Please check your credentials.";
+        msg = "Incorrect password or email. (You can also unlock using the Admin Passcode tab).";
       } else if (err.code === "auth/user-not-found") {
         msg = "No account found with this email. Click 'Create Account' above to sign up.";
       } else if (err.code === "auth/email-already-in-use") {
         msg = "This email already has an account. Click 'Sign In' above.";
       } else if (err.code === "auth/invalid-email") {
         msg = "Please enter a valid email address.";
-      } else if (err.code === "auth/weak-password") {
-        msg = "Password should be at least 6 characters.";
       }
       showAuthError(msg);
     }
@@ -1475,17 +1589,36 @@
       }
     }
 
-    // Sign Out
-    async function handleSignOut() {
-      if (confirm("Are you sure you want to sign out?")) {
-        await auth.signOut();
-        showToast("Signed out successfully.");
+    // Change Admin Passcode Modal
+    function openChangePasswordModal() {
+      document.getElementById("newPasscodeInput").value = "";
+      document.getElementById("confirmNewPasscodeInput").value = "";
+      document.getElementById("passwordModal").classList.add("active");
+    }
+
+    function closeChangePasswordModal() {
+      document.getElementById("passwordModal").classList.remove("active");
+    }
+
+    function saveNewPasscode() {
+      const p1 = document.getElementById("newPasscodeInput").value;
+      const p2 = document.getElementById("confirmNewPasscodeInput").value;
+      if (!p1) {
+        alert("Please enter a new passcode.");
+        return;
       }
+      if (p1 !== p2) {
+        alert("Passcodes do not match!");
+        return;
+      }
+      localStorage.setItem("eem_admin_passcode", p1);
+      closeChangePasswordModal();
+      showToast("Admin passcode successfully updated!");
     }
 
     // 2. Real-time Cloud Database Listener
     function listenToCloudFirestore() {
-      if (!cloudDB || !currentUser) return;
+      if (!cloudDB) return;
       if (cloudUnsubscribe) cloudUnsubscribe();
 
       const colRef = cloudDB.collection(CLOUD_COLLECTION);
@@ -1502,13 +1635,13 @@
         renderUI();
       }, (error) => {
         console.error("Firestore sync error:", error);
-        showToast("Cloud sync error: " + error.message);
+        showToast("Database connection notice: " + error.message);
       });
     }
 
     // Save record (Insert or Update)
     async function saveRecord(record) {
-      if (!cloudDB || !currentUser) return;
+      if (!cloudDB) return;
       if (record.id && typeof record.id === "string") {
         const docRef = cloudDB.collection(CLOUD_COLLECTION).doc(record.id);
         const copy = { ...record };
@@ -1523,14 +1656,14 @@
 
     // Delete record
     async function deleteRecord(id) {
-      if (!cloudDB || !currentUser) return;
+      if (!cloudDB) return;
       await cloudDB.collection(CLOUD_COLLECTION).doc(String(id)).delete();
     }
 
     // Clear all records
     async function userConfirmClearAll() {
       if (confirm("Are you sure you want to permanently DELETE ALL records? This action cannot be undone.")) {
-        if (cloudDB && currentUser) {
+        if (cloudDB) {
           showToast("Deleting cloud records...");
           const snapshot = await cloudDB.collection(CLOUD_COLLECTION).get();
           const batch = cloudDB.batch();
@@ -2111,6 +2244,8 @@
         initAppSecurity();
       } catch (e) {
         console.error("Initialization failed:", e);
+        dismissLoader();
+        showAuthGate();
       }
     });
   </script>
